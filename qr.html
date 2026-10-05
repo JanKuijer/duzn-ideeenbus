@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>DUZN Ideeënbus – QR-posters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400&display=swap">
+<style>
+/* QR-posters per locatie (FR-01). Op het scherm een overzicht; bij afdrukken één poster per A4. */
+:root{--teal:#2D6E7E;--teal-2:#3CBFB4;--teal-soft:#e4f3f2;--ink:#16282c;--muted:#5d7276;--line:#d9e4e5}
+*{box-sizing:border-box}
+body{margin:0;background:#eef4f4;color:var(--ink);font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5}
+.testbalk{background:#fdf1dc;color:#6b4300;font-size:13px;font-weight:600;text-align:center;padding:6px 16px}
+.balk{max-width:1200px;margin:0 auto;padding:20px 16px 8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.balk h1{margin:0;font-size:22px;flex:1;min-width:220px}
+.inp{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;font:inherit}
+.btn{border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;background:var(--teal);color:#fff;cursor:pointer}
+.uitleg{max-width:1200px;margin:0 auto;padding:0 16px 12px;color:var(--muted)}
+.posters{max-width:1200px;margin:0 auto;padding:8px 16px 48px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.poster{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;text-align:center}
+.poster .kop{background:var(--teal);color:#fff;padding:18px 16px}
+.poster .merk{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.85}
+.poster h2{margin:4px 0 0;font-size:20px;line-height:1.2;text-wrap:balance}
+.poster .midden{padding:16px;display:flex;flex-direction:column;gap:10px;align-items:center;flex:1}
+.poster .qr{width:170px;height:170px}
+.poster .qr svg{display:block;width:100%;height:100%}
+.poster .loc{font-weight:700;font-size:17px}
+.poster .stappen{margin:0;padding:0;list-style:none;color:var(--ink)}
+.poster .klein{font-size:12px;color:var(--muted)}
+.poster .url{font-family:"DM Mono",ui-monospace,Menlo,monospace;font-size:10px;color:var(--muted);word-break:break-all}
+.poster .test{background:#fdf1dc;color:#6b4300;font-size:11px;font-weight:600;padding:4px 8px}
+
+@media print{
+  @page{size:A4 portrait;margin:0}
+  body{background:#fff}
+  .testbalk,.balk,.uitleg{display:none}
+  .posters{display:block;padding:0;max-width:none}
+  .poster{border:0;border-radius:0;width:210mm;height:297mm;break-after:page;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .poster[hidden]{display:none}
+  .poster .kop{padding:26mm 18mm 16mm}
+  .poster .merk{font-size:14pt}
+  .poster h2{font-size:38pt;margin-top:4mm}
+  .poster .midden{padding:14mm 18mm;gap:8mm;justify-content:center}
+  .poster .qr{width:110mm;height:110mm}
+  .poster .loc{font-size:24pt}
+  .poster .stappen{font-size:17pt}
+  .poster .klein{font-size:12pt}
+  .poster .url{font-size:9pt}
+  .poster .test{font-size:11pt;padding:3mm}
+}
+</style>
+</head>
+<body>
+<div class="testbalk">Testomgeving – geen echte gegevens invoeren</div>
+<div class="balk">
+  <h1>QR-posters per locatie</h1>
+  <select class="inp" id="kies" aria-label="Locatie"></select>
+  <button class="btn" id="b-print">Afdrukken</button>
+</div>
+<p class="uitleg">Elke locatie heeft een eigen code; de locatie staat dan al ingevuld. Afdrukken geeft één poster per A4. Kies een locatie om er maar één af te drukken. Zet in het afdrukvenster "achtergrondafbeeldingen" aan voor de gekleurde kop.</p>
+<main class="posters" id="posters"></main>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+const CFG=Object.assign({publiekeBasis:""},window.IDEE_CONFIG||{});
+const LOCATIES=["Smilde","Swifterbant","Deventer","Schagerbrug","Haarlem","Naarden","IJsselstein","Nootdorp","Rotterdam","Roosendaal","Uden","Roermond","Beek","Heerlen","EQUINA Heerlen"];
+const CENTRUM={"Smilde":"Dierenuitvaartcentrum Smilde","Swifterbant":"Dierenuitvaartcentrum Flevoland","Deventer":"Dierenuitvaartcentrum Oost-Nederland","Schagerbrug":"Dierenuitvaartcentrum Schagerbrug","Haarlem":"Dierenuitvaartcentrum Groot Amsterdam","Naarden":"Dierenuitvaartcentrum Naarden","IJsselstein":"Dierenuitvaartcentrum IJsselstein","Nootdorp":"Dierenuitvaartcentrum Nootdorp","Rotterdam":"Dierenuitvaartcentrum Rotterdam","Roosendaal":"Dierenuitvaartcentrum Roosendaal","Uden":"Dierenuitvaartcentrum Uden","Roermond":"Dierenuitvaartcentrum Roermond","Beek":"Dierenuitvaartcentrum Maas en Beek","Heerlen":"Dierenuitvaartcentrum Parkstad Heerlen","EQUINA Heerlen":"EQUINA Funeral Services"};
+const slug=l=>l.toLowerCase().replace(/ /g,"-");
+const $=id=>document.getElementById(id);
+
+function qrSvg(url){const q=qrcode(0,"M");q.addData(url);q.make();return q.createSvgTag({cellSize:4,margin:0,scalable:true})}
+
+$("posters").innerHTML=LOCATIES.map(l=>{
+  const url=CFG.publiekeBasis+"/index.html?loc="+slug(l);
+  return `<article class="poster" data-loc="${l}">
+    <div class="kop"><div class="merk">DUZN Ideeënbus</div><h2>Wat zou jouw werk makkelijker maken?</h2></div>
+    <div class="midden">
+      <div class="qr">${qrSvg(url)}</div>
+      <div class="loc">${CENTRUM[l]}</div>
+      <ul class="stappen"><li>Scan de code met je telefoon</li><li>Spreek in een minuut in wat beter kan</li><li>Je krijgt altijd antwoord</li></ul>
+      <div class="klein">Je stem wordt niet bewaard, alleen de tekst. Naam opgeven mag, hoeft niet.</div>
+      <div class="url">${url}</div>
+    </div>
+    <div class="test">Testomgeving – geen echte gegevens invoeren</div>
+  </article>`;
+}).join("");
+
+$("kies").innerHTML='<option value="">Alle 15 locaties</option>'+LOCATIES.map(l=>`<option>${l}</option>`).join("");
+$("kies").onchange=()=>document.querySelectorAll(".poster").forEach(p=>p.hidden=!!$("kies").value&&p.dataset.loc!==$("kies").value);
+$("b-print").onclick=()=>window.print();
+</script>
+</body>
+</html>

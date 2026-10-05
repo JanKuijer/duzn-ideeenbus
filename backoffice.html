@@ -107,9 +107,10 @@ tbody tr.klik{cursor:pointer}tbody tr.klik:hover{background:#f5f9f9}
     <nav class="tabs" aria-label="Onderdelen">
       <button data-v="meldingen" class="on">Meldingen<span class="cnt" id="n-meld">0</span></button>
       <button data-v="goedkeuren">Goedkeuren<span class="cnt" id="n-goed">0</span></button>
+      <button data-v="rapport" id="tab-rapport">Weekrapport</button>
       <button data-v="audit" id="tab-audit">Auditlog</button>
     </nav>
-    <div class="wie"><span id="wie"></span><button class="btn ghost sm" id="b-ververs">Verversen</button><button class="btn ghost sm" id="b-uit">Uitloggen</button></div>
+    <div class="wie"><a class="small" href="scherm.html" target="_blank" rel="noopener">Locatiescherm</a><a class="small" href="qr.html" target="_blank" rel="noopener">QR-posters</a><span id="wie"></span><button class="btn ghost sm" id="b-ververs">Verversen</button><button class="btn ghost sm" id="b-uit">Uitloggen</button></div>
   </header>
 
   <div class="content">
@@ -136,6 +137,18 @@ tbody tr.klik{cursor:pointer}tbody tr.klik:hover{background:#f5f9f9}
       <h1>Terugkoppelingen ter goedkeuring</h1>
       <p class="muted" style="margin:0 0 14px">Goedkeuren gebeurt via de goedkeuringsmail (in productie: Teams en Outlook). Pas na akkoord gaat een bericht naar de medewerker. Hier zie je wat er wacht.</p>
       <div id="goed-lijst"></div>
+    </section>
+
+    <!-- Weekrapport (FR-17, FR-18) -->
+    <section id="v-rapport" hidden>
+      <h1>Weekrapport</h1>
+      <p class="muted" style="margin:0 0 14px">Mario krijgt dit rapport elke maandag om 07:00 over de week ervoor. Testmeldingen tellen niet mee.</p>
+      <div class="toolbar">
+        <select class="inp" id="r-week"><option value="0">Deze week tot nu</option><option value="1">Vorige week</option><option value="2">Twee weken terug</option><option value="3">Drie weken terug</option></select>
+        <button class="btn ghost sm" id="b-rapport-mail">Stuur dit rapport naar mijn mail</button>
+        <button class="btn ghost sm" id="b-herinnering">Controleer nu op stilstaande meldingen</button>
+      </div>
+      <div class="card" style="padding:18px;overflow-x:auto" id="rapport-inhoud"></div>
     </section>
 
     <!-- Auditlog (FR-22) -->
@@ -198,19 +211,20 @@ async function laad(){
   gebruiker=d.gebruiker;behandelaars=d.behandelaars;
   meldingen=d.meldingen.sort((a,b)=>String(b.ontvangen).localeCompare(String(a.ontvangen)));
   $("wie").textContent=gebruiker.naam+" · "+gebruiker.rol+(gebruiker.regio?" "+gebruiker.regio:"");
-  $("tab-audit").hidden=gebruiker.rol!=="goedkeurder";
+  $("tab-audit").hidden=$("tab-rapport").hidden=gebruiker.rol!=="goedkeurder";
   toon(weergave);
 }
 function toon(v){
-  weergave=v==="audit"&&gebruiker.rol!=="goedkeurder"?"meldingen":v;
+  weergave=["audit","rapport"].includes(v)&&gebruiker.rol!=="goedkeurder"?"meldingen":v;
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===weergave));
-  ["meldingen","goedkeuren","audit"].forEach(k=>$("v-"+k).hidden=k!==weergave);
+  ["meldingen","goedkeuren","rapport","audit"].forEach(k=>$("v-"+k).hidden=k!==weergave);
   const z=meldingen.filter(m=>!m.test);
   $("n-meld").textContent=z.filter(open).length;
   $("n-goed").textContent=z.filter(m=>m.status==="Ter goedkeuring").length;
   if(weergave==="meldingen")tekenMeldingen();
   if(weergave==="goedkeuren")tekenGoedkeuren();
   if(weergave==="audit")tekenAudit();
+  if(weergave==="rapport")tekenRapport(false);
 }
 
 // ===== MELDINGEN =====
@@ -307,7 +321,29 @@ async function tekenAudit(){
   catch(e){$("audit-body").innerHTML=`<tr><td colspan="4" class="empty">${esc(e.message)}</td></tr>`}
 }
 
+// ===== WEEKRAPPORT =====
+async function beheer(actie,extra){
+  let r;
+  try{r=await fetch(CFG.webhookBasis+"/idee-beheer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({code,actie},extra||{}))})}
+  catch(e){throw new Error("Geen verbinding. Probeer het zo nog eens.")}
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(d.message||"Er ging iets mis. Probeer het zo nog eens.");
+  return d;
+}
+async function tekenRapport(verstuur){
+  const el=$("rapport-inhoud");
+  if(!verstuur)el.innerHTML='<div class="empty">Rapport wordt opgebouwd…</div>';
+  try{
+    const d=await beheer("weekrapport",{weken_terug:Number($("r-week").value),verstuur});
+    el.innerHTML=d.html; // de server heeft alle tekst uit meldingen al ge-escaped
+    if(verstuur)toast("Het rapport is naar het testadres gemaild.");
+  }catch(e){if(verstuur)toast(e.message);else el.innerHTML=`<div class="empty">${esc(e.message)}</div>`}
+}
+
 // ===== KNOPPEN =====
+$("r-week").onchange=()=>tekenRapport(false);
+$("b-rapport-mail").onclick=()=>tekenRapport(true);
+$("b-herinnering").onclick=async()=>{try{await beheer("herinnering");toast("Gecontroleerd. Voor elke melding die 7 werkdagen stilstaat is een herinnering verstuurd.");await laad()}catch(e){toast(e.message)}};
 function vul(sel,arr,alles){sel.innerHTML=`<option value="">${alles}</option>`+arr.map(v=>`<option>${esc(v)}</option>`).join("")}
 vul($("f-loc"),LOCATIES,"Alle locaties");vul($("f-ond"),ONDERWERPEN,"Alle onderwerpen");vul($("f-st"),STATUSSEN,"Alle statussen");
 $("b-login").onclick=()=>{code=$("l-code").value.trim();inloggen()};

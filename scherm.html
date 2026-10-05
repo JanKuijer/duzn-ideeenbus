@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>DUZN Ideeënbus – Jullie zeiden, wij deden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Locatiescherm (FR-20): bedoeld voor een tv of groot scherm op de locatie. */
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;background:#2D6E7E;color:#fff;font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:18px;line-height:1.45}
+.testbalk{background:#fdf1dc;color:#6b4300;font-size:13px;font-weight:600;text-align:center;padding:6px 16px}
+.scherm{max-width:1300px;margin:0 auto;padding:clamp(20px,4vw,48px)}
+h1{font-size:clamp(30px,4.6vw,58px);margin:0 0 4px;text-wrap:balance}
+.sub{opacity:.85;margin-bottom:clamp(18px,3vw,32px)}
+.kaarten{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.kaart{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:22px}
+.zei{font-size:13px;letter-spacing:.06em;text-transform:uppercase;opacity:.78}
+.q{font-size:clamp(20px,2.2vw,26px);font-weight:700;margin:4px 0 16px;text-wrap:balance}
+.deden{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#bff1ec}
+.a{margin-top:4px}
+.voet{margin-top:clamp(22px,3vw,36px);display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.qr{background:#fff;border-radius:12px;padding:8px;width:132px;height:132px;flex:none}
+.qr svg{display:block;width:100%;height:100%}
+</style>
+</head>
+<body>
+<div class="testbalk">Testomgeving – geen echte gegevens invoeren</div>
+<main class="scherm">
+  <h1>Jullie zeiden, wij deden</h1>
+  <div class="sub" id="sub">Even laden…</div>
+  <div class="kaarten" id="kaarten"></div>
+  <div class="voet">
+    <div class="qr" id="qr" aria-label="QR-code naar de Ideeënbus"></div>
+    <div><b>Ook een idee?</b><br>Scan de code en spreek het in. Je krijgt altijd antwoord.</div>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+const CFG=Object.assign({webhookBasis:"",publiekeBasis:""},window.IDEE_CONFIG||{});
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// QR naar de medewerkerpagina; ?loc= van dit scherm gaat mee zodat de locatie al is ingevuld
+(function tekenQr(){
+  const loc=new URLSearchParams(location.search).get("loc");
+  const url=CFG.publiekeBasis+"/index.html"+(loc&&/^[a-z-]{2,30}$/.test(loc)?"?loc="+loc:"");
+  try{const q=qrcode(0,"M");q.addData(url);q.make();$("qr").innerHTML=q.createSvgTag({cellSize:4,margin:1,scalable:true})}catch(e){$("qr").textContent=""}
+})();
+
+async function laad(){
+  try{
+    const r=await fetch(CFG.webhookBasis+"/idee-scherm");
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    $("sub").textContent=d.aantal_opgepakt?d.aantal_opgepakt+(d.aantal_opgepakt===1?" idee":" ideeën")+" van collega's opgepakt":"De eerste ideeën zijn in behandeling";
+    // Alleen goedgekeurde teksten zonder namen of locaties (FR-20); de server bepaalt wat hier komt
+    $("kaarten").innerHTML=d.kaarten.map(k=>`<article class="kaart"><div class="zei">Jullie zeiden · ${k.aantal} ${k.aantal===1?"collega":"collega's"}</div><div class="q">${esc(k.zei)}</div><div class="deden">${k.status==="Gepland"?"Wij gaan doen":"Wij deden"}</div><div class="a">${esc(k.deden)}</div></article>`).join("")
+      ||'<article class="kaart"><div class="q">Nog niets uitgevoerd</div><div class="a">De eerste ideeën zijn in behandeling. Zodra er iets is opgepakt, lees je het hier.</div></article>';
+  }catch(e){
+    if(!$("kaarten").innerHTML)$("sub").textContent="Het lukt nu niet om de ideeën op te halen. We proberen het zo opnieuw.";
+  }
+}
+laad();
+setInterval(laad,5*60*1000); // elke vijf minuten verversen
+</script>
+</body>
+</html>
