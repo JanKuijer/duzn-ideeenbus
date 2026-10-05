@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>DUZN Ideeënbus – backoffice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Backoffice voor behandelaars en goedkeurder. Huisstijl en opbouw volgen docs/mockup.html. */
+:root{
+  --teal:#2D6E7E; --teal-2:#3CBFB4; --teal-soft:#e4f3f2; --ink:#16282c; --muted:#5d7276;
+  --line:#d9e4e5; --bg:#eef4f4; --surface:#ffffff; --warn:#b26b00; --warn-bg:#fdf1dc;
+  --bad:#b23a3a; --bad-bg:#fbe6e6; --ok:#1f7a52; --ok-bg:#e1f4ea; --violet:#5b4fa8; --violet-bg:#ecebf8;
+  --font:"DM Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"DM Mono",ui-monospace,Menlo,monospace;
+  --r:12px; color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal-2);outline-offset:2px}
+.mono{font-family:var(--mono)}.muted{color:var(--muted)}.small{font-size:13px}
+[hidden]{display:none!important}
+.testbalk{background:var(--warn-bg);color:#6b4300;font-size:13px;font-weight:600;text-align:center;padding:6px 16px}
+.topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700}
+.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-weight:500;color:var(--muted)}
+.tabs button.on{background:var(--surface);color:var(--teal)}
+.cnt{font-family:var(--mono);font-size:11px;background:var(--teal-soft);border-radius:99px;padding:1px 7px;margin-left:4px}
+.wie{margin-left:auto;font-size:13px;display:flex;gap:10px;align-items:center}
+.content{padding:20px 16px 48px;max-width:1200px;margin:0 auto}
+h1{margin:0 0 4px;font-size:22px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:600;background:var(--teal);color:#fff}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--teal);border:1px solid var(--line)}
+.btn.soft{background:var(--teal-soft);color:var(--teal)}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.inp{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--surface);width:100%}
+textarea.inp{resize:vertical}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:500}
+.login{max-width:380px;margin:60px auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;display:flex;flex-direction:column;gap:12px}
+.fout{color:var(--bad);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:14px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}.stat .l{font-size:12px;color:var(--muted)}
+.stat.alert .v{color:var(--bad)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.toolbar .inp{width:auto;flex:1;min-width:150px}.toolbar select.inp{flex:0 1 auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:500;background:#f7fafa}
+tbody tr.klik{cursor:pointer}tbody tr.klik:hover{background:#f5f9f9}
+.pill{display:inline-block;font-size:12px;font-weight:500;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.s-Nieuw{background:var(--teal-soft);color:var(--teal)}
+.s-In-behandeling{background:var(--violet-bg);color:var(--violet)}
+.s-Ter-goedkeuring{background:var(--warn-bg);color:var(--warn)}
+.s-Gepland{background:#e8eef9;color:#2f5597}
+.s-Uitgevoerd{background:var(--ok-bg);color:var(--ok)}
+.s-Niet-uitvoerbaar{background:#eceeef;color:#4c5a5d}
+.u-hoog{color:var(--bad);font-weight:600}.u-laag{color:var(--muted)}
+.chip{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:6px;background:var(--bg);color:var(--muted);margin:2px 4px 0 0}
+.chip.parting{background:#fff1e0;color:#9a5300}
+.late{color:var(--bad);font-weight:600}
+.empty{padding:36px 16px;text-align:center;color:var(--muted)}
+.scrim{position:fixed;inset:0;background:rgba(22,40,44,.35);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(580px,100%);background:var(--surface);z-index:41;display:flex;flex-direction:column}
+.dr-h{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}
+.dr-b{padding:14px 18px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:12px}
+.dr-f{padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.x{border:0;background:var(--bg);border-radius:8px;width:32px;height:32px;font-size:18px}
+.sec{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+.box{background:var(--bg);border-radius:10px;padding:9px 11px;font-size:14px;white-space:pre-wrap}
+.private{border:1px dashed #c9a46a;background:#fffaf1;border-radius:10px;padding:9px 11px}
+.private .sec{color:#8a5a00}
+.jev{border-left:3px solid var(--teal-2);background:var(--teal-soft);border-radius:0 10px 10px 0;padding:9px 11px;font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.grid2{grid-template-columns:1fr}}
+.qcard{padding:14px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.mailprev{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px}
+.mailprev .mh{background:#f7fafa;padding:7px 11px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.mailprev .mb{padding:11px;white-space:pre-wrap}
+.rij{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;z-index:60;max-width:calc(100% - 32px);font-size:14px}
+</style>
+</head>
+<body>
+<div class="testbalk">Testomgeving – geen echte gegevens invoeren</div>
+
+<!-- Inloggen -->
+<main class="login" id="v-login">
+  <div class="brand">DUZN Ideeënbus · backoffice</div>
+  <p class="small muted" style="margin:0">Log in met je persoonlijke toegangscode. In productie log je in met je DUZN-account.</p>
+  <label class="f">Toegangscode<input class="inp mono" id="l-code" type="password" autocomplete="off"></label>
+  <span class="fout" id="l-fout" hidden></span>
+  <button class="btn" id="b-login">Inloggen</button>
+</main>
+
+<div id="v-app" hidden>
+  <header class="topbar">
+    <div class="brand">DUZN Ideeënbus</div>
+    <nav class="tabs" aria-label="Onderdelen">
+      <button data-v="meldingen" class="on">Meldingen<span class="cnt" id="n-meld">0</span></button>
+      <button data-v="goedkeuren">Goedkeuren<span class="cnt" id="n-goed">0</span></button>
+      <button data-v="audit" id="tab-audit">Auditlog</button>
+    </nav>
+    <div class="wie"><span id="wie"></span><button class="btn ghost sm" id="b-ververs">Verversen</button><button class="btn ghost sm" id="b-uit">Uitloggen</button></div>
+  </header>
+
+  <div class="content">
+    <!-- Meldingen (FR-08..11, FR-14, FR-16) -->
+    <section id="v-meldingen">
+      <h1>Meldingen</h1>
+      <p class="muted" style="margin:0" id="meld-sub"></p>
+      <div class="stats" id="meld-stats"></div>
+      <div class="toolbar">
+        <input class="inp" id="q" placeholder="Zoek op tekst, code of DUZN-nummer">
+        <select class="inp" id="f-loc"></select>
+        <select class="inp" id="f-ond"></select>
+        <select class="inp" id="f-st"></select>
+        <label class="small rij"><input type="checkbox" id="f-test"> Toon testmeldingen</label>
+      </div>
+      <div class="card tw"><table>
+        <thead><tr><th>Code</th><th>Melding</th><th>Locatie</th><th>Urgentie</th><th>Status</th><th>Volgende actie</th></tr></thead>
+        <tbody id="meld-body"></tbody>
+      </table><div class="empty" id="meld-leeg" hidden>Geen meldingen voor deze filters. Pas de filters aan of wis de zoekterm.</div></div>
+    </section>
+
+    <!-- Goedkeuren (FR-13, FR-15) -->
+    <section id="v-goedkeuren" hidden>
+      <h1>Terugkoppelingen ter goedkeuring</h1>
+      <p class="muted" style="margin:0 0 14px">Goedkeuren gebeurt via de goedkeuringsmail (in productie: Teams en Outlook). Pas na akkoord gaat een bericht naar de medewerker. Hier zie je wat er wacht.</p>
+      <div id="goed-lijst"></div>
+    </section>
+
+    <!-- Auditlog (FR-22) -->
+    <section id="v-audit" hidden>
+      <h1>Auditlog</h1>
+      <p class="muted" style="margin:0 0 14px">Elke statuswijziging, goedkeuring en verzonden bericht. Laatste 200 regels.</p>
+      <div class="card tw"><table><thead><tr><th>Tijd</th><th>Wie</th><th>Code</th><th>Gebeurtenis</th></tr></thead><tbody id="audit-body"></tbody></table></div>
+    </section>
+  </div>
+</div>
+
+<!-- Detail van een melding -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-label="Melding" hidden>
+  <div class="dr-h"><div><div class="mono small muted" id="dr-code"></div><h2 style="margin:2px 0 0;font-size:18px" id="dr-titel"></h2></div><button class="x" id="b-sluit" aria-label="Sluiten">×</button></div>
+  <div class="dr-b" id="dr-body"></div>
+  <div class="dr-f" id="dr-voet"></div>
+</aside>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="config.js"></script>
+<script>
+const CFG=Object.assign({webhookBasis:""},window.IDEE_CONFIG||{});
+const LOCATIES=["Smilde","Swifterbant","Deventer","Schagerbrug","Haarlem","Naarden","IJsselstein","Nootdorp","Rotterdam","Roosendaal","Uden","Roermond","Beek","Heerlen","EQUINA Heerlen"];
+const ONDERWERPEN=["Parting","Planning & rooster","Ophalen & transport","Crematie & ovens","Klantcontact","Facilitair","Overig"];
+const STATUSSEN=["Nieuw","In behandeling","Ter goedkeuring","Gepland","Uitgevoerd","Niet uitvoerbaar"];
+const EIND=["Gepland","Uitgevoerd","Niet uitvoerbaar"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dag=iso=>iso?new Date(iso).toLocaleDateString("nl-NL",{day:"numeric",month:"short"}):"";
+const dagTijd=iso=>iso?new Date(iso).toLocaleString("nl-NL",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+const pill=s=>`<span class="pill s-${esc(s).replace(/ /g,"-")}">${esc(s)}</span>`;
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,3200)}
+function werkdagenSinds(iso){if(!iso)return 0;const d=new Date(iso),nu=new Date();let n=0;d.setHours(12,0,0,0);while(d<nu){d.setDate(d.getDate()+1);if(d.getDay()%6&&d<nu)n++}return n}
+const open=m=>!["Uitgevoerd","Niet uitvoerbaar"].includes(m.status);
+const verlopen=m=>m.actie_datum&&new Date(m.actie_datum)<new Date(new Date().toDateString())&&open(m);
+const stil=m=>["Nieuw","In behandeling"].includes(m.status)&&werkdagenSinds(m.status_gewijzigd)>=7; // FR-16
+
+// ===== STAAT EN API =====
+// De toegangscode staat alleen in sessionStorage van dit tabblad en gaat bij elke aanroep mee.
+let code="", gebruiker=null, meldingen=[], behandelaars=[], weergave="meldingen", openCode=null;
+try{code=sessionStorage.getItem("idee-bo-code")||""}catch(e){}
+async function api(actie,extra){
+  let r;
+  try{r=await fetch(CFG.webhookBasis+"/idee-backoffice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(Object.assign({code,actie},extra||{}))})}
+  catch(e){throw new Error("Geen verbinding. Probeer het zo nog eens.")}
+  let d={};try{d=await r.json()}catch(e){}
+  if(r.status===401){uitloggen();throw new Error("Deze toegangscode kennen we niet.")}
+  if(!r.ok)throw new Error(d.message||"Er ging iets mis. Probeer het zo nog eens.");
+  return d;
+}
+function uitloggen(){code="";gebruiker=null;try{sessionStorage.removeItem("idee-bo-code")}catch(e){}$("v-app").hidden=true;$("v-login").hidden=false;sluit()}
+async function inloggen(){
+  $("l-fout").hidden=true;
+  try{await laad();try{sessionStorage.setItem("idee-bo-code",code)}catch(e){}$("l-code").value="";$("v-login").hidden=true;$("v-app").hidden=false}
+  catch(e){$("l-fout").textContent=e.message;$("l-fout").hidden=false}
+}
+async function laad(){
+  const d=await api("lijst");
+  gebruiker=d.gebruiker;behandelaars=d.behandelaars;
+  meldingen=d.meldingen.sort((a,b)=>String(b.ontvangen).localeCompare(String(a.ontvangen)));
+  $("wie").textContent=gebruiker.naam+" · "+gebruiker.rol+(gebruiker.regio?" "+gebruiker.regio:"");
+  $("tab-audit").hidden=gebruiker.rol!=="goedkeurder";
+  toon(weergave);
+}
+function toon(v){
+  weergave=v==="audit"&&gebruiker.rol!=="goedkeurder"?"meldingen":v;
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===weergave));
+  ["meldingen","goedkeuren","audit"].forEach(k=>$("v-"+k).hidden=k!==weergave);
+  const z=meldingen.filter(m=>!m.test);
+  $("n-meld").textContent=z.filter(open).length;
+  $("n-goed").textContent=z.filter(m=>m.status==="Ter goedkeuring").length;
+  if(weergave==="meldingen")tekenMeldingen();
+  if(weergave==="goedkeuren")tekenGoedkeuren();
+  if(weergave==="audit")tekenAudit();
+}
+
+// ===== MELDINGEN =====
+function tekenMeldingen(){
+  const q=$("q").value.toLowerCase(),fl=$("f-loc").value,fo=$("f-ond").value,fs=$("f-st").value,ft=$("f-test").checked;
+  const z=meldingen.filter(m=>!m.test);
+  $("meld-sub").textContent=gebruiker.rol==="goedkeurder"?"Alle ideeën en knelpunten, gesorteerd door JEV. Klik op een melding om te behandelen.":gebruiker.rol==="productowner"?"Alle meldingen over Parting. Klik op een melding om te behandelen.":"Meldingen voor regio "+gebruiker.regio+". Klik op een melding om te behandelen.";
+  $("meld-stats").innerHTML=[["Nieuw",z.filter(m=>m.status==="Nieuw").length,""],["In behandeling",z.filter(m=>m.status==="In behandeling").length,""],["Ter goedkeuring",z.filter(m=>m.status==="Ter goedkeuring").length,""],["Actie verlopen",z.filter(verlopen).length,"alert"],["7 werkdagen of langer stil",z.filter(stil).length,"alert"]]
+    .map(([l,v,c])=>`<div class="stat ${v&&c?c:""}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+  const rijen=meldingen.filter(m=>(ft||!m.test)&&(!fl||m.locatie===fl)&&(!fo||m.onderwerp===fo)&&(!fs||m.status===fs)&&(!q||(m.volgcode+m.omschrijving+m.verbetervoorstel+m.duzn_nummer+m.cluster).toLowerCase().includes(q)));
+  $("meld-body").innerHTML=rijen.map(m=>`<tr class="klik" data-code="${esc(m.volgcode)}">
+    <td class="mono">${esc(m.volgcode)}${m.test?' <span class="chip">test</span>':""}</td>
+    <td style="min-width:260px">${esc(m.omschrijving.length>90?m.omschrijving.slice(0,88)+"…":m.omschrijving)}<br><span class="chip ${m.onderwerp==="Parting"?"parting":""}">${esc(m.onderwerp)}</span><span class="chip">${esc(m.cluster)}${m.cluster_aantal>1&&!m.test?" · "+m.cluster_aantal+"×":""}</span>${m.bron==="voice"?'<span class="chip">🎙️</span>':""}</td>
+    <td>${esc(m.locatie)}<div class="small muted">${dag(m.ontvangen)}</div></td>
+    <td class="u-${esc(m.urgentie)}">${esc(m.urgentie)}</td>
+    <td>${pill(m.status)}${stil(m)?'<div class="small late">stil</div>':""}</td>
+    <td>${m.volgende_actie?esc(m.volgende_actie)+`<div class="small ${verlopen(m)?"late":"muted"}">${dag(m.actie_datum)}${verlopen(m)?" · verlopen":""}</div>`:'<span class="muted small">—</span>'}</td></tr>`).join("");
+  $("meld-leeg").hidden=rijen.length>0;
+}
+
+// ===== DETAIL =====
+async function openMelding(c){
+  const m=meldingen.find(x=>x.volgcode===c);if(!m)return;
+  openCode=c;
+  $("dr-code").textContent=`${m.volgcode} · ${m.locatie} · ontvangen ${dagTijd(m.ontvangen)} · ${m.bron==="voice"?"ingesproken":"getypt"}`;
+  $("dr-titel").textContent=m.cluster;
+  $("dr-body").innerHTML='<div class="empty">Laden…</div>';$("dr-voet").innerHTML="";
+  $("drawer").hidden=false;$("scrim").hidden=false;
+  let d;
+  try{d=await api("detail",{volgcode:c})}catch(e){$("dr-body").innerHTML=`<div class="empty">${esc(e.message)}</div>`;return}
+  if(openCode!==c)return;
+  const bewerkbaar=["Nieuw","In behandeling","Ter goedkeuring"].includes(m.status); // terugkoppeling nog niet definitief
+  const statusVrij=["Nieuw","In behandeling"].includes(m.status);
+  $("dr-body").innerHTML=`
+    <div><div class="sec">Wat de medewerker zegt</div><div class="box">${esc(m.omschrijving)}</div></div>
+    ${m.verbetervoorstel?`<div><div class="sec">Verbetervoorstel</div><div class="box">${esc(m.verbetervoorstel)}</div></div>`:""}
+    <div class="jev"><b>JEV</b> · onderwerp ${esc(m.onderwerp)} · urgentie ${esc(m.urgentie)}${m.parting?" · <b>Parting</b>: zichtbaar voor productowner":""}${m.duzn_nummer?` · dossier <span class="mono">${esc(m.duzn_nummer)}</span>`:""}<br>
+      ${m.cluster_aantal>1&&!m.test?`Lijkt op <b>${m.cluster_aantal-1}</b> andere melding${m.cluster_aantal>2?"en":""} in dit cluster. Voorstel: als één verbeterpunt oppakken.`:"Nieuw thema, geen vergelijkbare meldingen."}</div>
+    <div class="grid2">
+      <label class="f">Status<select class="inp" id="d-st" ${statusVrij?"":"disabled"}>${(statusVrij?["Nieuw","In behandeling"]:[m.status]).map(s=>`<option ${s===m.status?"selected":""}>${esc(s)}</option>`).join("")}</select></label>
+      <label class="f">Verantwoordelijke<select class="inp" id="d-beh">${[...new Set(behandelaars.concat(m.verantwoordelijke).filter(Boolean))].map(b=>`<option ${b===m.verantwoordelijke?"selected":""}>${esc(b)}</option>`).join("")}</select></label>
+      <label class="f">Volgende actie<input class="inp" id="d-act" maxlength="300" value="${esc(m.volgende_actie)}" placeholder="Bijv. navragen bij planning"></label>
+      <label class="f">Datum<input class="inp" type="date" id="d-dat" value="${m.actie_datum?String(m.actie_datum).slice(0,10):""}"></label>
+    </div>
+    <div class="private"><div class="sec">🔒 Interne notitie · alleen behandelaars</div><textarea class="inp" id="d-not" rows="2" maxlength="4000" placeholder="Afwegingen, kosten, wie je hebt gesproken…">${esc(d.notitie)}</textarea><div class="small muted">Komt nooit in een mail, op de statuspagina of bij JEV.</div></div>
+    <div><div class="sec">Terugkoppeling aan medewerker</div>
+      <textarea class="inp" id="d-ter" rows="5" maxlength="1500" ${bewerkbaar?"":"disabled"} placeholder="Wat gaan we doen, of waarom niet?">${esc(m.terugkoppeling)}</textarea>
+      ${bewerkbaar?`<div class="rij" style="margin-top:6px"><label class="f" style="flex:1;min-width:170px">Voorgestelde eindstatus<select class="inp" id="d-eind">${EIND.map(s=>`<option ${s===(m.voorgestelde_status||"Uitgevoerd")?"selected":""}>${s}</option>`).join("")}</select></label><button class="btn soft sm" id="b-concept" style="align-self:flex-end">✨ Concept van JEV</button></div>`
+        :`<div class="small muted">${m.goedgekeurd?"Goedgekeurd en zichtbaar voor de medewerker.":"Deze melding is afgerond."}</div>`}
+      <div class="small muted" style="margin-top:4px">${m.status==="Ter goedkeuring"?"Wacht op akkoord van Mario. Pas je de tekst aan, bied hem dan opnieuw aan; de oude mail vervalt.":m.melder_email?"Gaat na goedkeuring per mail naar "+esc(m.melder_email)+".":"Geen e-mail: na goedkeuring zichtbaar via de volgcode."}</div></div>
+    <div class="small muted">${m.melder_naam?"Melder: "+esc(m.melder_naam):"Anonieme melding"}</div>
+    <div><div class="sec">Geschiedenis</div>${d.audit.map(a=>`<div class="small"><span class="muted">${dagTijd(a.tijd)} · ${esc(a.wie)}</span> · ${esc(a.gebeurtenis)}</div>`).join("")||'<div class="small muted">Nog geen regels.</div>'}</div>`;
+  $("dr-voet").innerHTML=`<button class="btn" id="b-opslaan">Opslaan</button>${bewerkbaar?`<button class="btn ghost" id="b-aanbieden">${m.status==="Ter goedkeuring"?"Opnieuw aanbieden":"Ter goedkeuring naar Mario"}</button>`:""}${m.test?"":'<button class="btn ghost sm" id="b-test">Markeer als test</button>'}`;
+  $("b-opslaan").onclick=()=>actie("opslaan",{status:$("d-st").value,verantwoordelijke:$("d-beh").value,volgende_actie:$("d-act").value,actie_datum:$("d-dat").value,notitie:$("d-not").value,terugkoppeling:$("d-ter").value},"Opgeslagen.");
+  if($("b-aanbieden"))$("b-aanbieden").onclick=async()=>{
+    const t=$("d-ter").value.trim();
+    if(t.length<10){toast("Schrijf eerst een terugkoppeling voor de medewerker.");return}
+    if(/\[[^\]]*invullen[^\]]*\]/i.test(t)){toast("Er staat nog een invulplek tussen blokhaken in de tekst.");return}
+    // Eerst de overige velden bewaren, dan aanbieden
+    try{await api("opslaan",{volgcode:c,status:$("d-st").value,verantwoordelijke:$("d-beh").value,volgende_actie:$("d-act").value,actie_datum:$("d-dat").value,notitie:$("d-not").value,terugkoppeling:t})}catch(e){toast(e.message);return}
+    actie("ter_goedkeuring",{voorgestelde_status:$("d-eind").value,terugkoppeling:t},c+" staat klaar voor Mario. De goedkeuringsmail is verstuurd.");
+  };
+  if($("b-test"))$("b-test").onclick=()=>actie("markeer_test",{},"Gemarkeerd als test.");
+  if($("b-concept"))$("b-concept").onclick=async()=>{
+    const knop=$("b-concept");knop.disabled=true;knop.textContent="JEV schrijft…";
+    try{const r=await api("concept",{volgcode:c,voorgestelde_status:$("d-eind").value,kladtekst:$("d-ter").value,aantal:m.cluster_aantal});$("d-ter").value=r.concept;toast("JEV heeft een concept geschreven. Pas het aan waar nodig.")}
+    catch(e){toast(e.message)}
+    knop.disabled=false;knop.textContent="✨ Concept van JEV";
+  };
+}
+async function actie(naam,extra,melding){
+  try{await api(naam,Object.assign({volgcode:openCode},extra));toast(melding);sluit();await laad()}catch(e){toast(e.message)}
+}
+function sluit(){$("drawer").hidden=true;$("scrim").hidden=true;openCode=null}
+
+// ===== GOEDKEUREN =====
+function tekenGoedkeuren(){
+  const lijst=meldingen.filter(m=>m.status==="Ter goedkeuring"&&!m.test);
+  $("goed-lijst").innerHTML=lijst.map(m=>`<div class="card qcard">
+    <div class="rij" style="justify-content:space-between"><div><span class="mono">${esc(m.volgcode)}</span> · <b>${esc(m.cluster)}</b> · ${esc(m.locatie)}</div><span class="small muted">door ${esc(m.verantwoordelijke)} · voorstel: ${pill(m.voorgestelde_status||"Uitgevoerd")}</span></div>
+    <div class="small"><span class="muted">Melding:</span> ${esc(m.omschrijving)}</div>
+    <div class="mailprev"><div class="mh">${m.melder_email?"Van: Mario van der Hout &lt;verbeterideeen@…&gt; · Aan: "+esc(m.melder_email):"Geen e-mail · wordt getoond bij volgcode "+esc(m.volgcode)}</div>
+      <div class="mb">${m.melder_naam?"Hoi "+esc(m.melder_naam)+",\n\n":"Hoi,\n\n"}${esc(m.terugkoppeling)}\n\nGroet,\nMario</div></div>
+    <div class="rij"><span class="pill s-Ter-goedkeuring">Wacht op akkoord per mail sinds ${dag(m.status_gewijzigd)}</span>
+      <button class="btn ghost sm" data-open="${esc(m.volgcode)}">Aanpassen</button>
+      ${gebruiker.rol==="goedkeurder"?`<button class="btn ghost sm" data-terug="${esc(m.volgcode)}">Terug naar behandelaar</button>`:""}</div>
+  </div>`).join("")||'<div class="card empty">Er wacht niets op goedkeuring.</div>';
+}
+
+// ===== AUDITLOG =====
+async function tekenAudit(){
+  $("audit-body").innerHTML='<tr><td colspan="4" class="empty">Laden…</td></tr>';
+  try{const d=await api("audit");$("audit-body").innerHTML=d.regels.map(a=>`<tr><td class="small">${dagTijd(a.tijd)}</td><td>${esc(a.wie)}</td><td class="mono">${esc(a.volgcode)}</td><td>${esc(a.gebeurtenis)}</td></tr>`).join("")||'<tr><td colspan="4" class="empty">Nog geen regels.</td></tr>'}
+  catch(e){$("audit-body").innerHTML=`<tr><td colspan="4" class="empty">${esc(e.message)}</td></tr>`}
+}
+
+// ===== KNOPPEN =====
+function vul(sel,arr,alles){sel.innerHTML=`<option value="">${alles}</option>`+arr.map(v=>`<option>${esc(v)}</option>`).join("")}
+vul($("f-loc"),LOCATIES,"Alle locaties");vul($("f-ond"),ONDERWERPEN,"Alle onderwerpen");vul($("f-st"),STATUSSEN,"Alle statussen");
+$("b-login").onclick=()=>{code=$("l-code").value.trim();inloggen()};
+$("l-code").onkeydown=e=>{if(e.key==="Enter")$("b-login").click()};
+$("b-uit").onclick=uitloggen;
+$("b-ververs").onclick=()=>laad().then(()=>toast("Bijgewerkt.")).catch(e=>toast(e.message));
+$("b-sluit").onclick=sluit;$("scrim").onclick=sluit;
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>toon(b.dataset.v));
+["q","f-loc","f-ond","f-st","f-test"].forEach(id=>$(id).oninput=tekenMeldingen);
+$("meld-body").onclick=e=>{const tr=e.target.closest("tr[data-code]");if(tr)openMelding(tr.dataset.code)};
+$("goed-lijst").onclick=async e=>{
+  const o=e.target.closest("[data-open]"),t=e.target.closest("[data-terug]");
+  if(o)openMelding(o.dataset.open);
+  if(t){try{await api("terugzetten",{volgcode:t.dataset.terug});toast("Teruggezet naar de behandelaar.");await laad()}catch(err){toast(err.message)}}
+};
+if(code)inloggen();
+</script>
+</body>
+</html>
